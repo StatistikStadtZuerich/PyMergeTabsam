@@ -6,6 +6,8 @@ import json
 import pandas as pd
 import datetime
 import shutil
+import openpyxl
+from openpyxl.styles import Font
 
 
 # Leere Listen vorbereiten
@@ -15,6 +17,7 @@ data_sheets = pd.DataFrame([],dtype=pd.StringDtype())
 # Global variable from configuration
 path_input = ""
 filename_output = ""
+row_start = 1
 
 # Function tolog
 # Write logging information
@@ -75,7 +78,28 @@ def create_tabsam():
     for file_i, file_row in data_files.iterrows():
       file_id = file_row['id']
       print(file_id)
-    
+      
+      if file_row['position']=="1":
+        print("Tabelle vorbereiten")
+        prepare_table(file_row, sheet_row)
+      else:
+        print("ergänzen")
+
+# Create a new table with header and index column
+def prepare_table(file_row, sheet_row):
+  global row_start, filename_output
+
+  # Opening the destination xlsx and create the new worksheet
+  dest_wb = openpyxl.load_workbook(filename_output)
+  dest_ws = dest_wb["T_1"]
+  
+  table_title = sheet_row['code'] + " " + sheet_row['title']
+  dest_ws.cell(row=row_start, column=1).value = table_title
+  dest_ws.cell(row=row_start, column=1).font = Font(name='Arial', size=8)
+  row_start += 1
+  
+  dest_wb.save(filename_output)
+
 
 # Main progam
 def main():
