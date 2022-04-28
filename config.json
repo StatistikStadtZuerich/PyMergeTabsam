@@ -17,7 +17,7 @@
 		}
 	],
 	"path_input": "J:/InfoDesk/09_Tools/Siedlungsbericht/Daten/IntTest/Tabellensammlung",
-	"filename_output": "T:/grm/Test.xlsx",
+	"filename_output": "T:/grm/Zusammenfassung-Siedlungsberichte-MaW.xlsx",
 	"sheets": [
 	  {
 	    "code": "T_2.1",
