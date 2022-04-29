@@ -19,16 +19,6 @@
 	"path_input": "J:/InfoDesk/09_Tools/Siedlungsbericht/Daten/IntTest/Tabellensammlung",
 	"filename_output": "T:/grm/Zusammenfassung-Siedlungsberichte-MaW.xlsx",
 	"sheets": [
-	  {
-	    "code": "T_2.1",
-	    "title": "Wohnungsbestand nach Zimmerzahl, 2021",
-	    "column": "Wohnsiedlung"
-	  },
-    {
-     "code": "T_2.1",
-     "title": "Wohnungsbestand nach Zimmerzahl, 2021",
-     "column": "Wohnsiedlung"
-    },
     {
      "code": "T_2.1",
      "title": "Wohnungsbestand nach Zimmerzahl, 2021",
@@ -81,8 +71,8 @@
     },
     {
      "code": "T_3.7",
-     "title": "Altersstruktur Wohnsiedlung Anzahl Personen nach Altersklassen, 2011-2021",
-     "column": "Wohnsiedlung"
+     "title": "Altersstruktur Wohnsiedlung Anzahl Personen nach Altersklassen, 2021",
+     "column": "2021"
     },
     {
      "code": "T_3.8",

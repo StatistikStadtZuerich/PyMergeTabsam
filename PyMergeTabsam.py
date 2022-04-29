@@ -8,6 +8,7 @@ import datetime
 import shutil
 import openpyxl
 from openpyxl.styles import Font
+from copy import copy
 
 
 # Leere Listen vorbereiten
@@ -17,7 +18,7 @@ data_sheets = pd.DataFrame([],dtype=pd.StringDtype())
 # Global variable from configuration
 path_input = ""
 filename_output = ""
-row_start = 1
+row_start = 9
 
 # Function tolog
 # Write logging information
@@ -96,8 +97,74 @@ def prepare_table(file_row, sheet_row):
   table_title = sheet_row['code'] + " " + sheet_row['title']
   dest_ws.cell(row=row_start, column=1).value = table_title
   dest_ws.cell(row=row_start, column=1).font = Font(name='Arial', size=8)
-  row_start += 1
+  row_start += 2
+
+  # Opening the source xlsx
+  source_xlsx = file_row['input_path']
+  print(source_xlsx)
+  source_wb = openpyxl.load_workbook(source_xlsx)
+  worksheet = sheet_row['code']
   
+  # Check if worksheet exists
+  if worksheet not in source_wb.sheetnames:
+    tolog("ERROR", "Worksheet " + worksheet + " does not exist in " + source_xlsx)
+  else:
+    source_ws = source_wb[worksheet]
+    
+    row_source = 10
+    # Copy the top left cell of the primary table
+    topleft_cell = source_ws.cell(row=row_source, column=1)
+    dest_ws.cell(row=row_start, column=1).value = topleft_cell.value
+    dest_ws.cell(row=row_start, column=1).font  = copy(topleft_cell.font)
+    
+    # Find the single relevant column
+    column_pos = 2
+    while True:
+      scan_cell = source_ws.cell(row=row_source, column=column_pos)
+      # Convert numeric header cells (eg. years) to character
+      if isinstance(scan_cell.value, int):
+        scan_cell_value = str(scan_cell.value)
+      else:
+        scan_cell_value = scan_cell.value
+      if scan_cell_value == sheet_row['column']:
+        break
+      column_pos += 1
+      if column_pos > 20:
+        column_pos = 0
+        tolog("ERROR", "Column " + sheet_row['column'] + " does not exist in worksheet " + worksheet + " of " + source_xlsx)
+        break
+    
+    # Copy the the header column and the single relevant column
+    if column_pos > 0:
+      # Set a title as the column header for the single relevant column
+      dest_ws.cell(row=row_start, column=2).value = file_row['title']
+      # Apply the font settings of the top left column
+      dest_ws.cell(row=row_start, column=2).font  = copy(topleft_cell.font)
+      
+      while True:
+        row_source += 1
+        row_start  +=1
+        head_cell = source_ws.cell(row=row_source, column=1)
+        if head_cell.value is None:
+          # End of data rows
+          break
+        if row_source > 100:
+          tolog("WARNING", "No end of header column found in worksheet " + worksheet + " of " + source_xlsx)
+          break
+        dest_ws.cell(row=row_start, column=1).value = head_cell.value
+        dest_ws.cell(row=row_start, column=1).font  = copy(head_cell.font)
+        # copy alignment of header cell
+        dest_ws.cell(row=row_start, column=1).alignment = copy(head_cell.alignment)
+        data_cell = source_ws.cell(row=row_source, column=column_pos)
+        dest_ws.cell(row=row_start, column=2).value = data_cell.value
+        dest_ws.cell(row=row_start, column=2).font  = copy(data_cell.font)
+        # copy alignment of data cell
+        dest_ws.cell(row=row_start, column=2).alignment = copy(data_cell.alignment)
+        # copy number_format of data cell
+        dest_ws.cell(row=row_start, column=2).number_format = copy(data_cell.number_format)
+    
+    row_start += 4
+
   dest_wb.save(filename_output)
 
 
