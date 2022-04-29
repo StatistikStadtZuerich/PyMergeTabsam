@@ -19,6 +19,7 @@ data_sheets = pd.DataFrame([],dtype=pd.StringDtype())
 path_input = ""
 filename_output = ""
 row_start = 9
+row_end = 0
 
 # Function tolog
 # Write logging information
@@ -65,7 +66,7 @@ def read_config():
 # Create and generate the destination excel files
 # If the destination files already exists, they will be overwritten
 def create_tabsam():
-  global filename_output
+  global row_start, row_end, filename_output
 
   # Create empty output file based on template
   tolog("INFO", "Writing output to: " + filename_output)
@@ -74,40 +75,47 @@ def create_tabsam():
   sheet_id = 0
   for sheet_i, sheet_row in data_sheets.iterrows():
     sheet_id = sheet_row['id']
-    print(sheet_id)
-
+    rc = 0
     for file_i, file_row in data_files.iterrows():
       file_id = file_row['id']
-      print(file_id)
-      
+
       if file_row['position']=="1":
-        print("Tabelle vorbereiten")
-        prepare_table(file_row, sheet_row)
+        rc = prepare_table(file_row, sheet_row)
       else:
-        print("ergänzen")
+        if rc == 0:
+          rc = merge_table(file_row, sheet_row)
+          # Ignore merge errors
+          rc = 0
+        else:
+          # No further processing due to error in primary column
+          pass
+    row_start = row_end + 3
+
 
 # Create a new table with header and index column
 def prepare_table(file_row, sheet_row):
-  global row_start, filename_output
+  global row_start, row_end, filename_output
+  return_code = 0
 
   # Opening the destination xlsx and create the new worksheet
   dest_wb = openpyxl.load_workbook(filename_output)
   dest_ws = dest_wb["T_1"]
   
+  # Write table title and set font 
   table_title = sheet_row['code'] + " " + sheet_row['title']
   dest_ws.cell(row=row_start, column=1).value = table_title
   dest_ws.cell(row=row_start, column=1).font = Font(name='Arial', size=8)
-  row_start += 2
+  row_start += 1
 
   # Opening the source xlsx
   source_xlsx = file_row['input_path']
-  print(source_xlsx)
   source_wb = openpyxl.load_workbook(source_xlsx)
   worksheet = sheet_row['code']
   
   # Check if worksheet exists
   if worksheet not in source_wb.sheetnames:
     tolog("ERROR", "Worksheet " + worksheet + " does not exist in " + source_xlsx)
+    return_code = 2
   else:
     source_ws = source_wb[worksheet]
     
@@ -117,6 +125,92 @@ def prepare_table(file_row, sheet_row):
     dest_ws.cell(row=row_start, column=1).value = topleft_cell.value
     dest_ws.cell(row=row_start, column=1).font  = copy(topleft_cell.font)
     
+    # Find the single relevant column
+    column_pos = 2
+    relevant_name = sheet_row['column']
+    # Special case "Ganze Stadt"
+    if relevant_name=="Wohnsiedlung" and file_row['title']=="Ganze Stadt":
+      relevant_name = "Stadt Zürich"
+    while True:
+      scan_cell = source_ws.cell(row=row_source, column=column_pos)
+      # Convert numeric header cells (eg. years) to character
+      if isinstance(scan_cell.value, int):
+        scan_cell_value = str(scan_cell.value)
+      else:
+        scan_cell_value = scan_cell.value
+      if scan_cell_value == relevant_name:
+        break
+      column_pos += 1
+      if column_pos > 20:
+        column_pos = 0
+        tolog("ERROR", "Column " + relevant_name + " does not exist in worksheet " + worksheet + " of " + source_xlsx)
+        return_code = 2
+        break
+    
+    # Copy the the header column and the single relevant column
+    if column_pos > 0:
+      row_target = row_start;
+      # Set a title as the column header for the single relevant column
+      dest_ws.cell(row=row_start, column=2).value = file_row['title']
+      # Apply the font settings of the top left column
+      dest_ws.cell(row=row_start, column=2).font  = copy(topleft_cell.font)
+      
+      while True:
+        row_source += 1
+        row_target += 1
+        head_cell = source_ws.cell(row=row_source, column=1)
+        if head_cell.value is None:
+          # End of data rows
+          break
+        if row_source > 100:
+          tolog("ERROR", "No end of header column found in worksheet " + worksheet + " of " + source_xlsx)
+          return_code = 2
+          break
+        # copy header cell value, font and alignment
+        dest_ws.cell(row=row_target, column=1).value = head_cell.value
+        dest_ws.cell(row=row_target, column=1).font  = copy(head_cell.font)
+        dest_ws.cell(row=row_target, column=1).alignment = copy(head_cell.alignment)
+        # copy data cell value, font, alignment and number format
+        data_cell = source_ws.cell(row=row_source, column=column_pos)
+        # Special case "Ganze Stadt"
+        if relevant_name=="2021" and file_row['title']=="Ganze Stadt":
+          pass
+        else:
+          dest_ws.cell(row=row_target, column=2).value = data_cell.value
+          dest_ws.cell(row=row_target, column=2).font  = copy(data_cell.font)
+          dest_ws.cell(row=row_target, column=2).alignment = copy(data_cell.alignment)
+          dest_ws.cell(row=row_target, column=2).number_format = copy(data_cell.number_format)
+        row_end = row_target
+    
+  dest_wb.save(filename_output)
+  return return_code
+
+
+# merge table to existing one
+def merge_table(file_row, sheet_row):
+  global row_start, row_end, filename_output
+  return_code = 0
+
+  # Opening the destination xlsx 
+  dest_wb = openpyxl.load_workbook(filename_output)
+  dest_ws = dest_wb["T_1"]
+  
+  # Opening the source xlsx
+  source_xlsx = file_row['input_path']
+  source_wb = openpyxl.load_workbook(source_xlsx)
+  worksheet = sheet_row['code']
+  
+  # Check if worksheet exists
+  if worksheet not in source_wb.sheetnames:
+    tolog("ERROR", "Worksheet " + worksheet + " does not exist in " + source_xlsx)
+    return_code = 2
+  else:
+    source_ws = source_wb[worksheet]
+    
+    row_source = 10
+    topleft_cell = source_ws.cell(row=row_source, column=1)
+    row_last = row_source + row_end - row_start
+
     # Find the single relevant column
     column_pos = 2
     while True:
@@ -132,40 +226,43 @@ def prepare_table(file_row, sheet_row):
       if column_pos > 20:
         column_pos = 0
         tolog("ERROR", "Column " + sheet_row['column'] + " does not exist in worksheet " + worksheet + " of " + source_xlsx)
+        return_code = 2
         break
     
-    # Copy the the header column and the single relevant column
+    # Compare the header column and copy the data of the single relevant column
     if column_pos > 0:
+      row_target = row_start;
+      target_col_pos = 1 + int(file_row['position'])
       # Set a title as the column header for the single relevant column
-      dest_ws.cell(row=row_start, column=2).value = file_row['title']
+      dest_ws.cell(row=row_start, column=target_col_pos).value = file_row['title']
       # Apply the font settings of the top left column
-      dest_ws.cell(row=row_start, column=2).font  = copy(topleft_cell.font)
+      dest_ws.cell(row=row_start, column=target_col_pos).font  = copy(topleft_cell.font)
       
       while True:
         row_source += 1
-        row_start  +=1
+        row_target += 1
         head_cell = source_ws.cell(row=row_source, column=1)
         if head_cell.value is None:
           # End of data rows
           break
-        if row_source > 100:
-          tolog("WARNING", "No end of header column found in worksheet " + worksheet + " of " + source_xlsx)
+        if row_source > row_last:
+          tolog("ERROR", "Merging table hast more rows than primary table " + worksheet + " of " + source_xlsx)
+          return_code = 2
           break
-        dest_ws.cell(row=row_start, column=1).value = head_cell.value
-        dest_ws.cell(row=row_start, column=1).font  = copy(head_cell.font)
-        # copy alignment of header cell
-        dest_ws.cell(row=row_start, column=1).alignment = copy(head_cell.alignment)
-        data_cell = source_ws.cell(row=row_source, column=column_pos)
-        dest_ws.cell(row=row_start, column=2).value = data_cell.value
-        dest_ws.cell(row=row_start, column=2).font  = copy(data_cell.font)
-        # copy alignment of data cell
-        dest_ws.cell(row=row_start, column=2).alignment = copy(data_cell.alignment)
-        # copy number_format of data cell
-        dest_ws.cell(row=row_start, column=2).number_format = copy(data_cell.number_format)
-    
-    row_start += 4
+        # copy header cell value, font and alignment
+        reference_cell_value = dest_ws.cell(row=row_target, column=1).value
+        if reference_cell_value == head_cell.value:
+          # copy data cell value, font, alignment and number format
+          data_cell = source_ws.cell(row=row_source, column=column_pos)
+          dest_ws.cell(row=row_target, column=target_col_pos).value = data_cell.value
+          dest_ws.cell(row=row_target, column=target_col_pos).font  = copy(data_cell.font)
+          dest_ws.cell(row=row_target, column=target_col_pos).alignment = copy(data_cell.alignment)
+          dest_ws.cell(row=row_target, column=target_col_pos).number_format = copy(data_cell.number_format)
+        else:
+          tolog("WARNING", "Difference of reference head '" + reference_cell_value + "' and merging head '" + head_cell.value + "' found in " + worksheet + " of " + source_xlsx)
 
   dest_wb.save(filename_output)
+  return return_code
 
 
 # Main progam

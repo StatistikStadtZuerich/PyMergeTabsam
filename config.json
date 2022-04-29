@@ -1,22 +1,47 @@
 {
 	"files": [
 		{
-			"title": "Obere Winterthurerstrasse",
-			"input_filename": "IntTest_Tabellen_Obere_Winterthurerstrasse.xlsx",
+			"title": "Ganze Stadt",
+			"input_filename": "MaW_Tabellen_Leutschenbach.xlsx",
 			"position": "1"
 		},
 		{
-			"title": "Röslihof",
-			"input_filename": "IntTest_Tabellen_Röslihof.xlsx",
+			"title": "Leutschenbach",
+			"input_filename": "MaW_Tabellen_Leutschenbach.xlsx",
 			"position": "2"
 		},
 		{
-			"title": "Langmauer Scheuchzerstrasse",
-			"input_filename": "IntTest_Tabellen_Langmauer-Scheuchzerstrasse.xlsx",
+			"title": "Hunzikerareal",
+			"input_filename": "MaW_Tabellen_Hunzikerareal.xlsx",
 			"position": "3"
+		},
+		{
+			"title": "Im Stockwerkeigentum",
+			"input_filename": "MaW_Tabellen_Im_Stockwerkeigentum.xlsx",
+			"position": "4"
+		},
+		{
+			"title": "Natürliche Personen",
+			"input_filename": "MaW_Tabellen_Natürliche_Personen.xlsx",
+			"position": "5"
+		},
+		{
+			"title": "Selbstbewohnte EFH",
+			"input_filename": "MaW_Tabellen_Selbstbewohnte_EFH.xlsx",
+			"position": "6"
+		},
+		{
+			"title": "Öffentliche Hand und Wohnbaugenossenschaften",
+			"input_filename": "MaW_Tabellen_Öffentliche_Hand_und_Wohnbaugenossenschaften.xlsx",
+			"position": "7"
+		},
+		{
+			"title": "Übrige private Gesellschaften",
+			"input_filename": "MaW_Tabellen_Übrige_private_Gesellschaften.xlsx",
+			"position": "8"
 		}
 	],
-	"path_input": "J:/InfoDesk/09_Tools/Siedlungsbericht/Daten/IntTest/Tabellensammlung",
+	"path_input": "J:/InfoDesk/09_Tools/Siedlungsbericht/Daten/MaW/Tabellensammlung",
 	"filename_output": "T:/grm/Zusammenfassung-Siedlungsberichte-MaW.xlsx",
 	"sheets": [
     {
