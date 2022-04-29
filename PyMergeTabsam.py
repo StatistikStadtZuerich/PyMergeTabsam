@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# PyTabsam
-# @author: sszsth, sszgrm
+# PyMergeTabsam
+# @author: sszgrm
 
 import json
 import pandas as pd
@@ -231,7 +231,6 @@ def merge_table(file_row, sheet_row):
     
     # Compare the header column and copy the data of the single relevant column
     if column_pos > 0:
-      row_target = row_start;
       target_col_pos = 1 + int(file_row['position'])
       # Set a title as the column header for the single relevant column
       dest_ws.cell(row=row_start, column=target_col_pos).value = file_row['title']
@@ -240,27 +239,35 @@ def merge_table(file_row, sheet_row):
       
       while True:
         row_source += 1
-        row_target += 1
+        row_target = row_start
         head_cell = source_ws.cell(row=row_source, column=1)
         if head_cell.value is None:
           # End of data rows
           break
-        if row_source > row_last:
-          tolog("ERROR", "Merging table hast more rows than primary table " + worksheet + " of " + source_xlsx)
-          return_code = 2
-          break
-        # copy header cell value, font and alignment
-        reference_cell_value = dest_ws.cell(row=row_target, column=1).value
-        if reference_cell_value == head_cell.value:
-          # copy data cell value, font, alignment and number format
-          data_cell = source_ws.cell(row=row_source, column=column_pos)
-          dest_ws.cell(row=row_target, column=target_col_pos).value = data_cell.value
-          dest_ws.cell(row=row_target, column=target_col_pos).font  = copy(data_cell.font)
-          dest_ws.cell(row=row_target, column=target_col_pos).alignment = copy(data_cell.alignment)
-          dest_ws.cell(row=row_target, column=target_col_pos).number_format = copy(data_cell.number_format)
-        else:
-          tolog("WARNING", "Difference of reference head '" + reference_cell_value + "' and merging head '" + head_cell.value + "' found in " + worksheet + " of " + source_xlsx)
-
+        
+        while True:
+          row_target += 1
+          reference_cell_value = dest_ws.cell(row=row_target, column=1).value
+          if reference_cell_value is None:
+            # Merging table has more rows than primary one. Record needs to be added.
+            # copy header cell value, font and alignment
+            dest_ws.cell(row=row_target, column=1).value = head_cell.value
+            dest_ws.cell(row=row_target, column=1).font  = copy(head_cell.font)
+            dest_ws.cell(row=row_target, column=1).alignment = copy(head_cell.alignment)
+            tolog("WARNING", "New row was added add the end of the table " + sheet_row['code'] + " for value " + head_cell.value + " from " + worksheet + " of " + source_xlsx)
+            row_end += 1
+            # Set reference value to activate the data copy
+            reference_cell_value = dest_ws.cell(row=row_target, column=1).value
+          if reference_cell_value == head_cell.value:
+            # copy data cell value, font, alignment and number format
+            data_cell = source_ws.cell(row=row_source, column=column_pos)
+            dest_ws.cell(row=row_target, column=target_col_pos).value = data_cell.value
+            dest_ws.cell(row=row_target, column=target_col_pos).font  = copy(data_cell.font)
+            dest_ws.cell(row=row_target, column=target_col_pos).alignment = copy(data_cell.alignment)
+            dest_ws.cell(row=row_target, column=target_col_pos).number_format = copy(data_cell.number_format)
+            value_found=1
+            break
+          
   dest_wb.save(filename_output)
   return return_code
 

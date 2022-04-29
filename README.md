@@ -2,12 +2,17 @@
 Merge Collection of Excel Worksheet produced by MARS
 
 
+## Notizen
 
-Es darf im Python Log keine WARNINGS oder ERROR drin haben.
+Es darf im Python Log keine ERRORs drin haben.
 
-Files Konfiguration
+WARNINGS im Log müssen geprüft werden.
 
-Hinweis: 
-Das Attribut position im Config muss mit 1 beginnen und aufwärts sortiert in 1er Schritten weitergehen 
-Das erste Excel ist das Master-Excel. Die Headerspalte aller Tabellen wird aus dieser gelesen 
+Es hat zwei Stellen in denen die "Ganze Stadt" hardcodiert ist. Zu finden unter "Special case".
+
+### Files Konfiguration
+
+Das Attribut position im Config muss mit 1 beginnen und aufwärts sortiert sein.  
+
+Das erste Excel ist das Master-Excel. Die Headerspalte aller Tabellen wird aus dieser gelesen. 
 
